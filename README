@@ -1,0 +1,11 @@
+Requires Mono 2.10 - .NET 4.0 Framework to run.
+
+Dll References are in Binrefs.
+the linux lib's are from Ubuntu 10.10 - libSDL and libIL(DevIL);
+
+Installation Notes.
+
+Compile using VS2010.
+Copy the files from binrefs that associate to your operating system to your Build Directory.
+
+All data is stored in data folder in the same directory.
