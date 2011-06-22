@@ -95,7 +95,7 @@
             Main.netMode = 1;
             disconnect = false;
             clientSock = new ClientSock();
-            clientSock.tcpClient.NoDelay = true;
+            clientSock.tcpClient.NoDelay = false;
             clientSock.readBuffer = new byte[0x400];
             clientSock.writeBuffer = new byte[0x400];
             bool flag = true;
@@ -235,12 +235,12 @@
                 if (i < 0x100)
                 {
                     serverSock[i] = new ServerSock();
-                    serverSock[i].tcpClient.NoDelay = true;
+                    serverSock[i].tcpClient.NoDelay = false;
                 }
                 NetMessage.buffer[i] = new messageBuffer();
                 NetMessage.buffer[i].whoAmI = i;
             }
-            clientSock.tcpClient.NoDelay = true;
+            clientSock.tcpClient.NoDelay = false;
         }
 
         public static void ListenForClients(object threadContext)
@@ -261,7 +261,7 @@
                     try
                     {
                         serverSock[index].tcpClient = tcpListener.AcceptTcpClient();
-                        serverSock[index].tcpClient.NoDelay = true;
+                        serverSock[index].tcpClient.NoDelay = false;
                         Console.WriteLine(serverSock[index].tcpClient.Client.RemoteEndPoint + " is connecting...");
                         Console.WriteLine("passed");
                     }
@@ -311,7 +311,7 @@
                 serverSock[index].Reset();
                 serverSock[index].whoAmI = index;
                 serverSock[index].tcpClient = new TcpClient();
-                serverSock[index].tcpClient.NoDelay = true;
+                serverSock[index].tcpClient.NoDelay = false;
                 serverSock[index].readBuffer = new byte[0x400];
                 serverSock[index].writeBuffer = new byte[0x400];
                 index++;
@@ -360,99 +360,108 @@
                 index = 0;
                 while (index < 0x100)
                 {
-                    if (NetMessage.buffer[index].checkBytes)
-                    {
-                        NetMessage.CheckBytes(index);
-                    }
-                    if (serverSock[index].kill)
-                    {
-                        serverSock[index].Reset();
-                        NetMessage.syncPlayers();
-                    }
-                    else if (serverSock[index].tcpClient.Connected)
-                    {
-                        if (!serverSock[index].active)
-                        {
-                            serverSock[index].state = 0;
-                        }
-                        serverSock[index].active = true;
-                        num4++;
-                        if (!serverSock[index].locked)
-                        {
-                            try
-                            {
-                                serverSock[index].networkStream = serverSock[index].tcpClient.GetStream();
-                                if (serverSock[index].networkStream.DataAvailable)
-                                {
-                                    serverSock[index].locked = true;
-                                    serverSock[index].networkStream.BeginRead(serverSock[index].readBuffer, 0, serverSock[index].readBuffer.Length, new AsyncCallback(serverSock[index].ServerReadCallBack), serverSock[index].networkStream);
-                                }
-                            }
-                            catch
-                            {
-                                Debug.WriteLine("   Exception normal: Tried to get data from a client after losing connection");
-                                serverSock[index].kill = true;
-                            }
-                        }
-                        if ((serverSock[index].statusMax > 0) && (serverSock[index].statusText2 != ""))
-                        {
-                            if (serverSock[index].statusCount >= serverSock[index].statusMax && serverSock[index].tcpClient.Client.Connected)
-                            {
+					try
+					{
+						if (NetMessage.buffer[index].checkBytes)
+						{
+							NetMessage.CheckBytes(index);
+						}
+						if (serverSock[index].kill)
+						{
+							serverSock[index].Reset();
+							NetMessage.syncPlayers();
+						}
+						else if (serverSock[index].tcpClient.Connected)
+						{
+							if (!serverSock[index].active)
+							{
+								serverSock[index].state = 0;
+							}
+							serverSock[index].active = true;
+							num4++;
+							if (!serverSock[index].locked)
+							{
+								try
+								{
+									serverSock[index].networkStream = serverSock[index].tcpClient.GetStream();
+									if (serverSock[index].networkStream.DataAvailable)
+									{
+										serverSock[index].locked = true;
+										serverSock[index].networkStream.BeginRead(serverSock[index].readBuffer, 0, serverSock[index].readBuffer.Length, new AsyncCallback(serverSock[index].ServerReadCallBack), serverSock[index].networkStream);
+									}
+								}
+								catch
+								{
+									Debug.WriteLine("   Exception normal: Tried to get data from a client after losing connection");
+									serverSock[index].kill = true;
+								}
+							}
+							if ((serverSock[index].statusMax > 0) && (serverSock[index].statusText2 != ""))
+							{
+								if (serverSock[index].statusCount >= serverSock[index].statusMax && serverSock[index].tcpClient.Client.Connected)
+								{
 
-                                string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " ", serverSock[index].statusText2, ": Complete!" });
-                               // Trace.WriteLine("Test1: {0}", status); //TODO: Remove the RemoteEndPoint
-                                serverSock[index].statusText = status;
-                                serverSock[index].statusText2 = "";
-                                serverSock[index].statusMax = 0;
-                                serverSock[index].statusCount = 0;
-                            }
-                            else
-                            {
-                                var sock = serverSock[index];
-                                string status = string.Concat(new object[] { "(", sock.tcpClient.Client.RemoteEndPoint, ") ", sock.name, " ", sock.statusText2, ": ", (int)((((float)sock.statusCount) / ((float)sock.statusMax)) * 100f), "%" });
-                              //  Trace.WriteLine("Test2: {0}", status); //TODO: Remove the RemoteEndPoint
-                                sock.statusText = status;
-                            }
-                        }
-                        else if (serverSock[index].state == 0)
-                        {
-                            string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " is connecting..." });
-                            //Trace.WriteLine("Test3: {0}", status); //TODO: Remove the RemoteEndPoint
-                            serverSock[index].statusText = status;
-                        }
-                        else if (serverSock[index].state == 1)
-                        {
-                            string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " is sending player data..." });
-                            //Trace.WriteLine("Test4: {0}", status); //TODO: Remove the RemoteEndPoint
-                            serverSock[index].statusText = status;
-                        }
-                        else if (serverSock[index].state == 2)
-                        {
-                            string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " requested world information" });
-                            //Trace.WriteLine("Test5: {0}", status); //TODO: Remove the RemoteEndPoint
-                            serverSock[index].statusText = status;
-                        }
-                        else if ((serverSock[index].state != 3) && (serverSock[index].state == 10))
-                        {
+									string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " ", serverSock[index].statusText2, ": Complete!" });
+									// Trace.WriteLine("Test1: {0}", status); //TODO: Remove the RemoteEndPoint
+									serverSock[index].statusText = status;
+									serverSock[index].statusText2 = "";
+									serverSock[index].statusMax = 0;
+									serverSock[index].statusCount = 0;
+								}
+								else
+								{
+									var sock = serverSock[index];
+									string status = string.Concat(new object[] { "(", sock.tcpClient.Client.RemoteEndPoint, ") ", sock.name, " ", sock.statusText2, ": ", (int)((((float)sock.statusCount) / ((float)sock.statusMax)) * 100f), "%" });
+									//  Trace.WriteLine("Test2: {0}", status); //TODO: Remove the RemoteEndPoint
+									sock.statusText = status;
+								}
+							}
+							else if (serverSock[index].state == 0)
+							{
+								string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " is connecting..." });
+								//Trace.WriteLine("Test3: {0}", status); //TODO: Remove the RemoteEndPoint
+								serverSock[index].statusText = status;
+							}
+							else if (serverSock[index].state == 1)
+							{
+								string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " is sending player data..." });
+								//Trace.WriteLine("Test4: {0}", status); //TODO: Remove the RemoteEndPoint
+								serverSock[index].statusText = status;
+							}
+							else if (serverSock[index].state == 2)
+							{
+								string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " requested world information" });
+								//Trace.WriteLine("Test5: {0}", status); //TODO: Remove the RemoteEndPoint
+								serverSock[index].statusText = status;
+							}
+							else if ((serverSock[index].state != 3) && (serverSock[index].state == 10))
+							{
 
-                            string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " is playing" });
-                           // Trace.WriteLine("Test6: {0}", status); //TODO: Remove the RemoteEndPoint
-                            serverSock[index].statusText = status;
-                        }
-                    }
-                    else if (serverSock[index].active)
-                    {
-                        serverSock[index].kill = true;
-                    }
-                    else
-                    {
-                        serverSock[index].statusText2 = "";
-                        if (index < 0xff)
-                        {
-                            Main.player[index].active = false;
-                        }
-                    }
-                    index++;
+								string status = string.Concat(new object[] { "(", serverSock[index].tcpClient.Client.RemoteEndPoint, ") ", serverSock[index].name, " is playing" });
+								// Trace.WriteLine("Test6: {0}", status); //TODO: Remove the RemoteEndPoint
+								serverSock[index].statusText = status;
+							}
+						}
+						else if (serverSock[index].active)
+						{
+							serverSock[index].kill = true;
+						}
+						else
+						{
+							serverSock[index].statusText2 = "";
+							if (index < 0xff)
+							{
+								Main.player[index].active = false;
+							}
+						}
+						
+					}
+					catch (Exception ex)
+					{
+
+						Trace.WriteLine(String.Format("Exception Caught: Message {0} :: StackTrace {1}", ex.Message, ex.StackTrace));
+					}
+					index++;
                 }
                 num2++;
                 if (num2 > 10)

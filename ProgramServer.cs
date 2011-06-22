@@ -15,7 +15,7 @@
 
                 Trace.Listeners.Clear();
 
-                TextWriterTraceListener twtl = new TextWriterTraceListener(Path.Combine(Path.GetTempPath(), AppDomain.CurrentDomain.FriendlyName));
+                TextWriterTraceListener twtl = new TextWriterTraceListener("Server.log");
                 twtl.Name = "TextLogger";
                 twtl.TraceOutputOptions = TraceOptions.ThreadId | TraceOptions.DateTime;
 
@@ -26,7 +26,7 @@
                 Trace.Listeners.Add(ctl);
                 Trace.AutoFlush = true;
 
-                Trace.WriteLine("The first line to be in the logfile and on the console.");
+               // Trace.WriteLine(String.Format("Endians {0}", BitConverter.IsLittleEndian));
 
 
 

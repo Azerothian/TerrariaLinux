@@ -242,6 +242,7 @@ namespace Terraria
             {
                 if (Main.netMode == 1)
                 {
+                    
                     Main.time = (double)BitConverter.ToInt32(this.readBuffer, index1);
                     int index2 = index1 + 4;
                     Main.dayTime = false;

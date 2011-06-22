@@ -20,9 +20,12 @@ namespace Terraria
         {
             int whoAmi = 256;
             if (Main.netMode == 2 && remoteClient >= 0)
+            {
                 whoAmi = remoteClient;
+            }
             lock (NetMessage.buffer[whoAmi])
             {
+                
                 int local_1 = 5;
                 int local_2 = local_1;
                 int local_2_38;
@@ -1014,7 +1017,7 @@ namespace Terraria
                         try
                         {
                             ++NetMessage.buffer[whoAmi].spamCount;
-                            Netplay.clientSock.networkStream.BeginWrite(NetMessage.buffer[whoAmi].writeBuffer, 0, local_1, new AsyncCallback(Netplay.clientSock.ClientWriteCallBack), (object)Netplay.clientSock.networkStream);
+                            Netplay.clientSock.networkStream.Write(NetMessage.buffer[whoAmi].writeBuffer, 0, local_1);
                         }
                         catch
                         {
@@ -1033,7 +1036,7 @@ namespace Terraria
                                 try
                                 {
                                     ++NetMessage.buffer[local_24_2].spamCount;
-                                    Netplay.serverSock[local_24_2].networkStream.BeginWrite(NetMessage.buffer[whoAmi].writeBuffer, 0, local_1, new AsyncCallback(Netplay.serverSock[local_24_2].ServerWriteCallBack), (object)Netplay.serverSock[local_24_2].networkStream);
+                                    Netplay.serverSock[local_24_2].networkStream.Write(NetMessage.buffer[whoAmi].writeBuffer, 0, local_1);
                                 }
                                 catch
                                 {
@@ -1048,23 +1051,9 @@ namespace Terraria
                     try
                     {
 
-                       // Trace.WriteLine(String.Format("Write buffer Size {0} : Send Length {1}", NetMessage.buffer[whoAmi].writeBuffer.Length, local_1));
-                        if (local_1 == 5)
-                        {
-                            //TODO: Seems to be crashing the client here when it sends a 5 byte array.
-                            //IT only does this in linux same code works in winblows.. Message Type Num 49.
-                            // Seems to be causing the windows client to overflow.
-                            for (int i = 0; i < local_1; i++)
-                            {
-                                Trace.WriteLine(String.Format("[{0}]", NetMessage.buffer[whoAmi].writeBuffer[i]));
-                            }
-
-                        }
                         ++NetMessage.buffer[remoteClient].spamCount;
-                        Netplay.serverSock[remoteClient].networkStream.BeginWrite(
-                            NetMessage.buffer[whoAmi].writeBuffer, 0, local_1,
-                            new AsyncCallback(Netplay.serverSock[remoteClient].ServerWriteCallBack),
-                            (object)Netplay.serverSock[remoteClient].networkStream);
+                        Netplay.serverSock[remoteClient].networkStream.Write(
+                            NetMessage.buffer[whoAmi].writeBuffer, 0, local_1);
 
                     }
                     catch
@@ -1240,6 +1229,7 @@ namespace Terraria
                 {
                     if (Main.autoShutdown && !flag)
                     {
+
                         string str1 = Netplay.serverSock[index1].tcpClient.Client.RemoteEndPoint.ToString();
                         string str2 = str1;
                         for (int index2 = 0; index2 < str1.Length; ++index2)
